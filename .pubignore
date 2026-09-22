@@ -1,2 +1,13 @@
+# A .pubignore replaces .gitignore for pub, so the ignores below repeat it.
+build/
+coverage/
+pubspec.lock
+*.iml
+*.ipr
+*.iws
+.idea/
+migrate_working_dir/
+
+# Repository-only files.
 docs/
 CLAUDE.md
