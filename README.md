@@ -46,22 +46,45 @@ If the app already has its own binding subclass, mix in
 ## Smooth scrolling — `SmoothScrollController`
 
 ```dart
-final controller = SmoothScrollController(
-  duration: const Duration(milliseconds: 160),
-  curve: Curves.easeOutCubic,
-);
+final controller = SmoothScrollController(); // spring, 400 ms, no bounce
 
 ListView(controller: controller, children: [...]);
 ```
 
-- Wheel input during an animation adds to the previous target, so fast
+Choose how wheel scrolling moves with `motion`:
+
+| Motion | Options | Defaults | When the target moves |
+|---|---|---|---|
+| `WheelMotion.spring` | `duration`, `bounce` | 400 ms, `0` | keeps its velocity |
+| `WheelMotion.curve` | `duration`, `curve` (any `Curve`) | 400 ms, `Curves.easeOutCubic` | starts a new curve from rest |
+| `WheelMotion.lerp` | `timeConstant` | 60 ms | speed follows the remaining distance |
+
+```dart
+SmoothScrollController(
+  motion: const WheelMotion.spring(duration: Duration(milliseconds: 300), bounce: 0.1),
+);
+SmoothScrollController(
+  motion: const WheelMotion.curve(curve: Curves.easeOut),
+);
+```
+
+- **spring** `duration` is how long it takes to settle (about 99% of the
+  distance is covered by then). `bounce` `0` stops at the target without
+  passing it; above `0` passes it and comes back; below `0` settles more
+  slowly. Same parameters as SwiftUI's `spring(duration:bounce:)`.
+- **lerp** covers about 63% of the remaining distance per `timeConstant`.
+- A zero duration or time constant jumps as `ScrollController` does.
+- `motion` can be replaced while attached; the next wheel input uses it.
+
+Behaviour shared by every motion:
+
+- Wheel input during the motion adds to the previous target, so fast
   consecutive notches travel the full distance.
-- Scrolling never passes the start or end of the list.
+- Scrolling never passes the start or end of the list, even with `bounce`.
+- Items stay tappable while a wheel motion settles.
 - Drag, scrollbar, keyboard and direct `jumpTo`/`animateTo` calls behave as
   with `ScrollController`. Wheel input during an `animateTo` of your own starts
   from the current position.
-- `duration` and `curve` can be changed while attached; the next wheel input
-  uses them. `Duration.zero` jumps as `ScrollController` does.
 - In nested scroll views the outer view takes the wheel once the inner one
   reaches its end, as in Flutter by default.
 
@@ -74,5 +97,5 @@ ListView(controller: controller, children: [...]);
 
 ## Example
 
-`example/` shows a default list and a smooth list side by side, with sliders
-for the wheel scale and the duration.
+`example/` shows a default list and a smooth list side by side, with every
+motion and option adjustable.
