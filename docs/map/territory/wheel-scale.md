@@ -34,7 +34,8 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
 
 ## Cross-cutting invariants
 
-**None.**
+- [SDK floor](../invariant/sdk-floor.md) — the Flutter version this code may
+  assume.
 
 ## Blast radius
 

@@ -1,3 +1,8 @@
+## 0.1.1
+
+* Lower the minimum Flutter version to 3.32.0 and Dart to 3.8.0, from 3.41.0
+  and 3.11.5. No API or behavior change.
+
 ## 0.1.0
 
 Initial release.
