@@ -110,7 +110,8 @@ With every motion:
   behave as with `ScrollController`. Wheel input during your own `animateTo`
   starts from the current position.
 - In nested scroll views, the outer view takes the wheel once the inner one
-  reaches its end, as in Flutter by default.
+  reaches its end, as in Flutter by default. While the inner motion is still
+  heading for its end, further wheel input already goes to the outer view.
 
 ## Wheel distance
 
@@ -151,6 +152,9 @@ its sign, such as Ctrl+wheel zoom steps, behave as before.
   smoothed.
 - A scrollbar with its own controller is not smoothed when the wheel is used
   over the scrollbar itself.
+- A widget between two nested scroll views that claims wheel events through
+  `GestureBinding.instance.pointerSignalResolver` does not receive the input
+  the inner view passes outward during a motion; the outer view takes it.
 - Developed and checked on Windows. Other desktop platforms use the same
   Flutter code path but have not been tried by hand.
 
