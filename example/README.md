@@ -1,17 +1,52 @@
-# flutter_smooth_wheel_scroll_example
+# flutter_smooth_wheel_scroll example
 
-A new Flutter project.
+A default list next to a smooth one. Every option is adjustable with an
+explanation, and the code for the current settings is shown ready to copy.
 
-## Getting Started
+```sh
+flutter run -d windows
+```
 
-This project is a starting point for a Flutter application.
+The smallest setup:
 
-A few resources to get you started if this is your first Flutter project:
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_smooth_wheel_scroll/flutter_smooth_wheel_scroll.dart';
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+void main() {
+  SmoothWheelBinding.ensureInitialized(scale: 0.5); // optional
+  runApp(const MaterialApp(home: SmoothList()));
+}
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+class SmoothList extends StatefulWidget {
+  const SmoothList({super.key});
+
+  @override
+  State<SmoothList> createState() => _SmoothListState();
+}
+
+class _SmoothListState extends State<SmoothList> {
+  final _controller = SmoothScrollController(
+    motion: const WheelMotion.spring(duration: Duration(milliseconds: 400)),
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView.builder(
+        controller: _controller,
+        itemCount: 500,
+        itemBuilder: (_, i) => ListTile(title: Text('Item $i')),
+      ),
+    );
+  }
+}
+```
+
+The full comparison app is in [`lib/main.dart`](lib/main.dart).
