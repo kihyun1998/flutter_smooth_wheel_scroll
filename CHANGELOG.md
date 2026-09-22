@@ -1,3 +1,9 @@
+## 0.1.2
+
+* Fix: in nested scroll views, wheel input that arrives while the inner
+  view's motion is already heading for its end now scrolls the outer view, as
+  with `ScrollController`. It was dropped until the motion settled.
+
 ## 0.1.1
 
 * Lower the minimum Flutter version to 3.32.0 and Dart to 3.8.0, from 3.41.0
