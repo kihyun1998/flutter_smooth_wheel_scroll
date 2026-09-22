@@ -74,6 +74,7 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
     final base = animating ? current.target : pixels;
     final target = (base + delta).clamp(minScrollExtent, maxScrollExtent);
     if (animating ? target == current.target : target == pixels) {
+      if (animating) _passToAncestor(delta);
       return;
     }
 
@@ -93,6 +94,52 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
     updateUserScrollDirection(
       delta > 0.0 ? ScrollDirection.reverse : ScrollDirection.forward,
     );
+  }
+
+  /// Gives [delta] to the nearest enclosing scroll view that [Scrollable]
+  /// would have let take a wheel event of that size: under the pointer, on the
+  /// same axis, and able to move.
+  void _passToAncestor(double delta) {
+    final origin = context.notificationContext;
+    final originBox = origin?.findRenderObject();
+    if (origin == null || originBox == null) return;
+    final raw = axisDirectionIsReversed(axisDirection) ? -delta : delta;
+
+    for (
+      var scrollable = origin.findAncestorStateOfType<ScrollableState>();
+      scrollable != null;
+      scrollable = scrollable.context.findAncestorStateOfType<ScrollableState>()
+    ) {
+      final position = scrollable.position;
+      if (position == this ||
+          position.axis != axis ||
+          !_isRenderAncestor(
+            scrollable.context.findRenderObject(),
+            originBox,
+          ) ||
+          !position.physics.shouldAcceptUserOffset(position)) {
+        continue;
+      }
+      final ancestorDelta = axisDirectionIsReversed(position.axisDirection)
+          ? -raw
+          : raw;
+      final ancestorTarget = (position.pixels + ancestorDelta).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      if (ancestorTarget != position.pixels) {
+        position.pointerScroll(ancestorDelta);
+        return;
+      }
+    }
+  }
+
+  /// Whether [ancestor] is [node] or one of its parents in the render tree.
+  static bool _isRenderAncestor(RenderObject? ancestor, RenderObject node) {
+    for (RenderObject? n = node; n != null; n = n.parent) {
+      if (n == ancestor) return true;
+    }
+    return false;
   }
 
   static bool _isInstant(WheelMotion motion) => switch (motion) {
