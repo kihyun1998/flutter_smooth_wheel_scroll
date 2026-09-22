@@ -1,0 +1,19 @@
+name: flutter_smooth_wheel_scroll_example
+description: "Compares default and smooth mouse wheel scrolling side by side."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_smooth_wheel_scroll:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

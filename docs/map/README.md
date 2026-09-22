@@ -6,10 +6,9 @@ from** (`## Governing decisions`, `## Reference behaviour`).
 
 ## Coverage
 
-Empty. The package has no scroll code yet, so an absent note is the correct
-state, not a backlog item. **A territory note is owed when its first slice
-lands**; an invariant note when a fact is found to hold in more than one
-territory.
+`ls territory/ invariant/` is the roster. **A territory note is owed when its
+first slice lands**; an invariant note when a fact is found to hold in more than
+one territory. A planned area with no code has no note, and that is correct.
 
 ## Conventions
 
