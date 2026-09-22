@@ -25,8 +25,8 @@ class _Params {
   double curveMs = 160;
   int curveIndex = 0;
   double lerpTauMs = 60;
-  double springStiffness = 300;
-  double springRatio = 1.0;
+  double springDurationMs = 350;
+  double springBounce = 0.0;
 }
 
 const _curves = <String, Curve>{
@@ -160,10 +160,9 @@ class _MotionActivity extends ScrollActivity {
   void _startSpring(Duration now) {
     if (mode != _Mode.spring) return;
     _spring = SpringSimulation(
-      SpringDescription.withDampingRatio(
-        mass: 1,
-        stiffness: _params.springStiffness,
-        ratio: _params.springRatio,
+      SpringDescription.withDurationAndBounce(
+        duration: Duration(milliseconds: _params.springDurationMs.round()),
+        bounce: _params.springBounce,
       ),
       _x,
       target,
@@ -318,20 +317,20 @@ class _ProtoPageState extends State<_ProtoPage> {
                     (v) => setState(() => _params.lerpTauMs = v),
                   ),
                   _slider(
-                    'spring: stiffness',
-                    _params.springStiffness,
-                    50,
-                    1500,
-                    _params.springStiffness.round().toString(),
-                    (v) => setState(() => _params.springStiffness = v),
+                    'spring: duration',
+                    _params.springDurationMs,
+                    100,
+                    800,
+                    '${_params.springDurationMs.round()} ms',
+                    (v) => setState(() => _params.springDurationMs = v),
                   ),
                   _slider(
-                    'spring: damping ratio',
-                    _params.springRatio,
-                    0.4,
-                    1.5,
-                    _params.springRatio.toStringAsFixed(2),
-                    (v) => setState(() => _params.springRatio = v),
+                    'spring: bounce',
+                    _params.springBounce,
+                    -0.5,
+                    0.5,
+                    _params.springBounce.toStringAsFixed(2),
+                    (v) => setState(() => _params.springBounce = v),
                   ),
                 ])
                   SizedBox(width: 520, child: w),
