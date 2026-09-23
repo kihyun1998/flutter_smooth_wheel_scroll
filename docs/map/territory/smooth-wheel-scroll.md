@@ -79,7 +79,7 @@ accumulated target instead of jumping, by overriding
   Both are chosen, not measured: 0.5 px is under a pixel, so the snap is not
   visible, and 10 px/s moves under 0.2 px in a 60 Hz frame.
 - Spring parameters are exposed as duration and bounce, not stiffness and
-  damping: chosen by hand in the #3 prototype (`prototype/3-wheel-motion`),
+  damping: chosen by hand in the #3 prototype (tag `archive/3-wheel-motion`),
   where the physical pair gave no basis for picking a default.
 
 ## Code
