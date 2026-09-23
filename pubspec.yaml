@@ -1,6 +1,6 @@
 name: flutter_smooth_wheel_scroll
 description: "Smooth, adjustable mouse wheel scrolling for Flutter desktop: scale the wheel distance app-wide and animate it per scroll view with a spring, curve or lerp."
-version: 0.1.2
+version: 0.1.3
 homepage: https://github.com/kihyun1998/flutter_smooth_wheel_scroll
 repository: https://github.com/kihyun1998/flutter_smooth_wheel_scroll
 issue_tracker: https://github.com/kihyun1998/flutter_smooth_wheel_scroll/issues

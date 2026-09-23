@@ -1,3 +1,14 @@
+## 0.1.3
+
+* Fix: on the web, trackpad scrolling is no longer animated by
+  `SmoothScrollController`. Flutter web sends it as a `PointerScrollEvent` of
+  kind `PointerDeviceKind.trackpad`, and every small delta retargeted the
+  wheel motion. Only mouse wheel input animates now, as on desktop; other
+  input scrolls as with `ScrollController` and stops a running motion. In
+  Firefox, which reports trackpads as a mouse, trackpad scrolling still
+  animates.
+* The example has a web target (`flutter run -d chrome`).
+
 ## 0.1.2
 
 * Fix: in nested scroll views, wheel input that arrives while the inner
