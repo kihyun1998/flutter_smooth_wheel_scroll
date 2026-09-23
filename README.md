@@ -168,8 +168,8 @@ before.
 - A touchpad that the system reports as a mouse wheel rather than as a
   precision touchpad, on Windows or Linux, is treated as a mouse wheel.
 - Developed and checked on Windows. Other desktop platforms use the same
-  Flutter code path but have not been tried by hand. The web trackpad
-  behaviour follows Flutter web's source and has not been tried in a browser.
+  Flutter code path but have not been tried by hand. The example has been run
+  in Chrome; web trackpad input has not been tried with a real trackpad.
 
 ## Example
 
