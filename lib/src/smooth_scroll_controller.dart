@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -13,6 +15,11 @@ import 'wheel_motion.dart';
 /// Wheel input that arrives during the motion is added to the previous
 /// target, not to the current position. Every other input — drag, scrollbar,
 /// keyboard, [jumpTo], [animateTo] — behaves as with [ScrollController].
+///
+/// Of the wheel input [Scrollable] and [RawScrollbar] deliver, only that from
+/// a [PointerScrollEvent] of kind [PointerDeviceKind.mouse] is animated. Input
+/// of any other kind, such as a trackpad on the web, stops a running motion
+/// and jumps from the current position.
 ///
 /// A [NestedScrollView] routes wheel input through its own coordinator, so
 /// this controller does not smooth it.
@@ -57,14 +64,19 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
     super.keepScrollOffset,
     super.oldPosition,
     super.debugLabel,
-  });
+  }) {
+    _ScrollEventKind.attach();
+  }
 
   final SmoothScrollController controller;
 
   @override
   void pointerScroll(double delta) {
     final motion = controller.motion;
-    if (delta == 0.0 || _isInstant(motion)) {
+    final kind = _ScrollEventKind.current;
+    if (delta == 0.0 ||
+        _isInstant(motion) ||
+        (kind != null && kind != PointerDeviceKind.mouse)) {
       super.pointerScroll(delta);
       return;
     }
@@ -147,6 +159,44 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
     CurveWheelMotion(:final duration) => duration == Duration.zero,
     LerpWheelMotion(:final timeConstant) => timeConstant == Duration.zero,
   };
+
+  @override
+  void dispose() {
+    _ScrollEventKind.detach();
+    super.dispose();
+  }
+}
+
+/// The device kind of the last [PointerScrollEvent] the [GestureBinding]
+/// routed, recorded by one global [PointerRouter] route shared by every
+/// [_SmoothScrollPosition].
+abstract final class _ScrollEventKind {
+  static int _positions = 0;
+
+  /// The kind of the last routed [PointerScrollEvent], or `null` once the
+  /// microtasks after its dispatch have run.
+  static PointerDeviceKind? current;
+
+  /// Registers the route for the first position.
+  static void attach() {
+    if (_positions++ == 0) {
+      GestureBinding.instance.pointerRouter.addGlobalRoute(_record);
+    }
+  }
+
+  /// Removes the route with the last position.
+  static void detach() {
+    if (--_positions == 0) {
+      GestureBinding.instance.pointerRouter.removeGlobalRoute(_record);
+      current = null;
+    }
+  }
+
+  static void _record(PointerEvent event) {
+    if (event is! PointerScrollEvent) return;
+    current = event.kind;
+    scheduleMicrotask(() => current = null);
+  }
 }
 
 /// Drives a position toward a wheel target that can move, one [_Follower] at a

@@ -13,6 +13,7 @@ API the code calls; Dart 3.8 is the SDK that Flutter 3.32 ships.
 | `SpringDescription.withDurationAndBounce` | `lib/src/smooth_scroll_controller.dart` — `_SpringFollower` | **3.32.0** |
 | `PointerScrollEvent(onRespond:)` | `lib/src/wheel_scale.dart` — `scaleWheelEvent` | 3.24.0 |
 | `PointerScrollEvent(viewId:)` | `lib/src/wheel_scale.dart` — `scaleWheelEvent` | 3.13.0 |
+| `PointerRouter.addGlobalRoute` | `lib/src/smooth_scroll_controller.dart` — `_SmoothScrollPosition` | before 1.0 |
 | `ScrollController(onAttach:, onDetach:)` | `lib/src/smooth_scroll_controller.dart` — `SmoothScrollController` | 3.13.0 |
 | sealed classes, switch expressions, patterns | `lib/src/wheel_motion.dart`, `_Follower` | Dart 3.0 (Flutter 3.10) |
 
