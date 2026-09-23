@@ -15,8 +15,10 @@ Scales the delta of every mouse wheel `PointerScrollEvent` app-wide, before any
   runs under `TestWidgetsFlutterBinding` and cannot install a custom binding.
 - Importing the package installs nothing. A binding is app-wide and single, so
   only the app may install it, and it must do so before any other binding.
-- Only `PointerDeviceKind.mouse` is scaled. Precision touchpads send
-  `PointerPanZoom*` events and never reach the transform's scaling branch.
+- Only `PointerDeviceKind.mouse` is scaled. On desktop, precision touchpads
+  send `PointerPanZoom*` events; on the web, trackpads send
+  `PointerScrollEvent`s of kind `trackpad`. Neither reaches the scaling
+  branch.
 - The rebuilt event forwards `respond` to the original. Without it,
   `Scrollable`'s `respond(allowPlatformDefault:)` would reach nothing.
 
@@ -47,4 +49,9 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
 - Handlers that read the delta's magnitude (not only its sign) see the scaled
   value. Known consumers are `flutter_table_plus` and `flutter_folderview`
   Ctrl+wheel zoom, which read the sign only.
+- In Firefox the web engine reports trackpad scrolling as kind `mouse`, so it
+  is scaled.
+- On Windows and Linux, a touchpad the driver reports as wheel messages rather
+  than as a precision touchpad arrives as kind `mouse`, so it is scaled. Read
+  from the embedders' source, not tried.
 - The binding itself has no test; only the transform does.

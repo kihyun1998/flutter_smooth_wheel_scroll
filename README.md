@@ -112,6 +112,11 @@ With every motion:
 - In nested scroll views, the outer view takes the wheel once the inner one
   reaches its end, as in Flutter by default. While the inner motion is still
   heading for its end, further wheel input already goes to the outer view.
+- Only mouse wheels animate. Trackpad scrolling moves as with
+  `ScrollController` and stops a running motion: on desktop, precision
+  touchpads send `PointerPanZoom` events, which scroll as a drag; on the web,
+  trackpads send `PointerScrollEvent`s of kind `PointerDeviceKind.trackpad`,
+  which the controller does not animate.
 
 ## Wheel distance
 
@@ -141,10 +146,12 @@ void main() {
 - Importing the package installs nothing. A widget package can depend on this
   one for `SmoothScrollController` without replacing the app's binding.
 
-Only mouse wheels are scaled. Precision touchpad scrolling arrives as
-`PointerPanZoom` events and is left alone. Handlers that read the size of
-`PointerScrollEvent.scrollDelta` see the scaled value; handlers that read only
-its sign, such as Ctrl+wheel zoom steps, behave as before.
+Only mouse wheels are scaled. Trackpad scrolling is left alone: on desktop,
+precision touchpads send `PointerPanZoom` events, and on the web, trackpads
+send `PointerScrollEvent`s of kind `PointerDeviceKind.trackpad`. Handlers that
+read the size of `PointerScrollEvent.scrollDelta` see the scaled value;
+handlers that read only its sign, such as Ctrl+wheel zoom steps, behave as
+before.
 
 ## Limitations
 
@@ -155,8 +162,14 @@ its sign, such as Ctrl+wheel zoom steps, behave as before.
 - A widget between two nested scroll views that claims wheel events through
   `GestureBinding.instance.pointerSignalResolver` does not receive the input
   the inner view passes outward during a motion; the outer view takes it.
+- In Firefox, Flutter web cannot tell a trackpad from a mouse wheel and reports
+  both as a mouse. There, trackpad scrolling animates and is scaled by
+  `wheelScale`.
+- A touchpad that the system reports as a mouse wheel rather than as a
+  precision touchpad, on Windows or Linux, is treated as a mouse wheel.
 - Developed and checked on Windows. Other desktop platforms use the same
-  Flutter code path but have not been tried by hand.
+  Flutter code path but have not been tried by hand. The web trackpad
+  behaviour follows Flutter web's source and has not been tried in a browser.
 
 ## Example
 

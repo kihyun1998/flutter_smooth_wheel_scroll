@@ -44,6 +44,24 @@ accumulated target instead of jumping, by overriding
   delta further out the same way, so no loop over several levels is needed.
 - The position sets `userScrollDirection` itself, as the default
   `pointerScroll` does; nothing else in a wheel motion would.
+- Only a delta from a `PointerScrollEvent` of kind `mouse` animates; any other
+  kind goes to the default `pointerScroll`, whose `goIdle` stops a running
+  motion. The web sends trackpad scrolling as a `PointerScrollEvent` of kind
+  `trackpad`, not as `PointerPanZoom*`. `pointerScroll` receives only the
+  delta, so `_ScrollEventKind` records the kind from a global `pointerRouter`
+  route: `GestureBinding.handleEvent` routes the event before the resolver
+  calls `pointerScroll`, because the binding's own hit-test entry comes last.
+  The record is cleared in a microtask, after the event's dispatch, so a
+  `pointerScroll` called with no event (none in the framework; user code and
+  tests) animates once those microtasks have run, even after an event no
+  `Scrollable` claimed. Chosen by the maintainer in #11 over keeping web
+  trackpad smooth and documenting it.
+- One route and one record serve every smooth position, registered with the
+  first and removed with the last. A route per position cost every pointer
+  event one call and every scroll event one microtask per position: with 200
+  positions, a scroll event and its frame took about 1.1–1.5 ms longer than
+  with `ScrollController` under `flutter test`; shared, the difference is
+  within noise.
 - `motion` is read on every wheel input; a zero duration or time constant
   falls back to the default jump.
 - A new target replaces the `_Follower`, started from the old one's position
@@ -66,7 +84,7 @@ accumulated target instead of jumping, by overriding
 
 ## Code
 
-- `lib/src/smooth_scroll_controller.dart` — `SmoothScrollController`, `_SmoothScrollPosition.pointerScroll`, `_SmoothScrollPosition._passToAncestor`, `_WheelMotionActivity`, `_Follower`, `_SpringFollower`, `_CurveFollower`, `_LerpFollower`
+- `lib/src/smooth_scroll_controller.dart` — `SmoothScrollController`, `_SmoothScrollPosition.pointerScroll`, `_SmoothScrollPosition._passToAncestor`, `_ScrollEventKind`, `_WheelMotionActivity`, `_Follower`, `_SpringFollower`, `_CurveFollower`, `_LerpFollower`
 - `lib/src/wheel_motion.dart` — `WheelMotion`, `SpringWheelMotion`, `CurveWheelMotion`, `LerpWheelMotion`
 
 ## Reference behaviour
@@ -79,6 +97,17 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
 - `packages/flutter/lib/src/widgets/scrollable.dart` — `_receivedPointerSignal`,
   `_handlePointerScroll`: the claim decision made from `pixels`, which
   `_passToAncestor` repeats; identical at 3.32.0 and 3.41.9.
+- `packages/flutter/lib/src/gestures/binding.dart` — `handleEvent`:
+  `pointerRouter.route` runs before `pointerSignalResolver.resolve`, which is
+  what lets the recorded kind be read in `pointerScroll`; identical at
+  3.32.0.
+- `packages/flutter/lib/src/rendering/binding.dart` — `hitTestInView`: the
+  render tree is hit-tested before the binding adds its own entry, so the
+  binding's `handleEvent` runs after every `Scrollable` has registered;
+  identical at 3.32.0.
+- `engine/src/flutter/lib/web_ui/lib/src/engine/pointer_binding.dart` —
+  `_isTrackpadEvent`, `_convertWheelEventToPointerData`: the web's trackpad
+  `PointerScrollEvent`, and Firefox, where every wheel event is a mouse.
 - `packages/flutter/lib/src/widgets/scroll_activity.dart` —
   `DrivenScrollActivity`: the end-of-motion and overscroll handling the motion
   activity mirrors, and the pointer-ignoring it does not.
@@ -113,6 +142,22 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
   `ScrollBehavior.pointerAxisModifiers`. An enclosing view under a different
   `ScrollConfiguration` would have read the other axis of the event while
   Shift is held. Not reproduced; no test.
+- In Firefox the web engine reports trackpad scrolling as kind `mouse`, so it
+  animates. Telling them apart would mean guessing from the delta pattern;
+  left out of #11.
+- On Windows and Linux, a touchpad the driver reports as wheel messages rather
+  than as a precision touchpad arrives as kind `mouse`, so it animates.
+  Unchanged by #11; read from the embedders' source, not tried.
+- The web engine classifies each wheel event from its delta pattern, and a
+  multiple of 120 within 50 ms of a trackpad event counts as trackpad. A mouse
+  notch it misclassifies jumps and stops the running motion. Not reproduced;
+  no browser run.
+- The kind is recorded when the binding routes the event, after the render
+  tree has handled it. A `Listener.onPointerSignal` that forwards a delta to
+  `pointerScroll` runs before that, so it reads no kind (the delta animates)
+  or, in the same synchronous flush, the previous event's. A `pointerScroll`
+  called with no event before the microtasks run also reads the previous
+  event's kind. No test.
 - The activity owns the position it last set. If something else changes
   `pixels` mid-motion (a correction from content resizing above), the next
   frame sets the follower's own value back. Not reproduced; no test.

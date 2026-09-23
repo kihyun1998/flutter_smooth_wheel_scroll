@@ -48,10 +48,15 @@ Widget _list(
   );
 }
 
-Future<void> _wheel(WidgetTester tester, double dy, {Offset? at}) async {
+Future<void> _wheel(
+  WidgetTester tester,
+  double dy, {
+  Offset? at,
+  PointerDeviceKind kind = PointerDeviceKind.mouse,
+}) async {
   tester.binding.handlePointerEvent(
     PointerScrollEvent(
-      kind: PointerDeviceKind.mouse,
+      kind: kind,
       position: at ?? tester.getCenter(find.byType(Scrollable).first),
       scrollDelta: Offset(0, dy),
     ),
@@ -253,6 +258,35 @@ void main() {
           controller.position.userScrollDirection,
           ScrollDirection.forward,
         );
+      });
+
+      testWidgets('a trackpad scroll jumps', (tester) async {
+        final controller = SmoothScrollController(motion: motion);
+        await tester.pumpWidget(_list(controller));
+
+        await _wheel(tester, 60, kind: PointerDeviceKind.trackpad);
+        expect(controller.offset, 60);
+
+        await tester.pumpAndSettle();
+        expect(controller.offset, 60);
+      });
+
+      testWidgets('a trackpad scroll during a motion stops it and jumps from '
+          'the current position', (tester) async {
+        final controller = SmoothScrollController(motion: motion);
+        await tester.pumpWidget(_list(controller));
+
+        await _wheel(tester, 60);
+        await tester.pump(_duration ~/ 2);
+        final before = controller.offset;
+        expect(before, greaterThan(0));
+        expect(before, lessThan(60));
+
+        await _wheel(tester, 30, kind: PointerDeviceKind.trackpad);
+        expect(controller.offset, before + 30);
+
+        await tester.pumpAndSettle();
+        expect(controller.offset, before + 30);
       });
 
       testWidgets(
@@ -565,6 +599,120 @@ void main() {
       expect(outer.offset, 60);
       expect(inner.offset, 100);
     });
+  });
+
+  testWidgets('a mouse wheel after a trackpad scroll animates', (tester) async {
+    final controller = SmoothScrollController(motion: _motions['spring']!);
+    await tester.pumpWidget(_list(controller));
+
+    await _wheel(tester, 30, kind: PointerDeviceKind.trackpad);
+    await _wheel(tester, 60);
+    expect(controller.offset, 30);
+
+    await tester.pumpAndSettle();
+    expect(controller.offset, 90);
+  });
+
+  testWidgets('a pointerScroll call with no event after a trackpad scroll '
+      'the list did not take animates', (tester) async {
+    final controller = SmoothScrollController(motion: _motions['spring']!);
+    await tester.pumpWidget(_list(controller));
+
+    await _wheel(tester, -30, kind: PointerDeviceKind.trackpad);
+    controller.position.pointerScroll(60);
+    expect(controller.offset, 0);
+
+    await tester.pumpAndSettle();
+    expect(controller.offset, 60);
+  });
+
+  for (final kind in [
+    PointerDeviceKind.touch,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.invertedStylus,
+    PointerDeviceKind.unknown,
+  ]) {
+    testWidgets('a ${kind.name} scroll jumps', (tester) async {
+      final controller = SmoothScrollController(motion: _motions['spring']!);
+      await tester.pumpWidget(_list(controller));
+
+      await _wheel(tester, 60, kind: kind);
+      expect(controller.offset, 60);
+    });
+  }
+
+  testWidgets('a disposed position leaves no global pointer route', (
+    tester,
+  ) async {
+    final router = tester.binding.pointerRouter;
+    final baseline = router.debugGlobalRouteCount;
+
+    await tester.pumpWidget(_list(SmoothScrollController()));
+    expect(router.debugGlobalRouteCount, baseline + 1);
+
+    await tester.pumpWidget(const SizedBox());
+    expect(router.debugGlobalRouteCount, baseline);
+  });
+
+  testWidgets('a position replaced on a physics change leaves no global '
+      'pointer route', (tester) async {
+    final router = tester.binding.pointerRouter;
+    final baseline = router.debugGlobalRouteCount;
+    final controller = SmoothScrollController();
+
+    await tester.pumpWidget(
+      _list(controller, physics: const ClampingScrollPhysics()),
+    );
+    await tester.pumpWidget(
+      _list(controller, physics: const BouncingScrollPhysics()),
+    );
+    await tester.pumpWidget(const SizedBox());
+
+    expect(router.debugGlobalRouteCount, baseline);
+  });
+
+  testWidgets('smooth positions share one global pointer route', (
+    tester,
+  ) async {
+    final router = tester.binding.pointerRouter;
+    final baseline = router.debugGlobalRouteCount;
+    final first = SmoothScrollController(motion: _motions['spring']!);
+    final second = SmoothScrollController(motion: _motions['spring']!);
+    Widget lists({required bool both}) => Directionality(
+      textDirection: TextDirection.ltr,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 200,
+            child: ListView.builder(
+              controller: first,
+              itemExtent: _itemExtent,
+              itemCount: 100,
+              itemBuilder: (_, i) => Text('$i'),
+            ),
+          ),
+          if (both)
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                controller: second,
+                itemExtent: _itemExtent,
+                itemCount: 100,
+                itemBuilder: (_, i) => Text('$i'),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(lists(both: true));
+    expect(router.debugGlobalRouteCount, baseline + 1);
+
+    await tester.pumpWidget(lists(both: false));
+    expect(router.debugGlobalRouteCount, baseline + 1);
+
+    await _wheel(tester, 30, kind: PointerDeviceKind.trackpad);
+    expect(first.offset, 30);
   });
 
   testWidgets('a spring keeps its velocity when the target moves', (
