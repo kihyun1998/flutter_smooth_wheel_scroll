@@ -179,7 +179,7 @@ shown ready to copy.
 
 ```sh
 cd example
-flutter run -d windows
+flutter run -d windows   # or: -d chrome
 ```
 
 ## License

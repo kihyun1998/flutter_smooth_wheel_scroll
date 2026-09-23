@@ -4,7 +4,7 @@ A default list next to a smooth one. Every option is adjustable with an
 explanation, and the code for the current settings is shown ready to copy.
 
 ```sh
-flutter run -d windows
+flutter run -d windows   # or: -d chrome
 ```
 
 The smallest setup:
