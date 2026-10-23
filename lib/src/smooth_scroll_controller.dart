@@ -108,6 +108,13 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
     );
   }
 
+  @override
+  void correctBy(double correction) {
+    super.correctBy(correction);
+    final current = activity;
+    if (current is _WheelMotionActivity) current.shift(correction);
+  }
+
   /// Gives [delta] to the nearest enclosing scroll view that [Scrollable]
   /// would have let take a wheel event of that size: under the pointer, on the
   /// same axis, and able to move.
@@ -208,7 +215,8 @@ class _WheelMotionActivity extends ScrollActivity {
     required WheelMotion motion,
     required double target,
     required TickerProvider vsync,
-  }) : _follower = _Follower.of(
+  }) : _motion = motion,
+       _follower = _Follower.of(
          motion,
          x: metrics.pixels,
          v: 0.0,
@@ -221,6 +229,7 @@ class _WheelMotionActivity extends ScrollActivity {
   final ScrollMetrics metrics;
 
   late final Ticker _ticker;
+  WheelMotion _motion;
   _Follower _follower;
   Duration _last = Duration.zero;
 
@@ -228,12 +237,26 @@ class _WheelMotionActivity extends ScrollActivity {
 
   /// Heads for [target] with [motion] from the current position and velocity.
   void retarget(double target, WheelMotion motion) {
+    _motion = motion;
     _follower = _Follower.of(
       motion,
       x: _follower.x,
       v: _follower.v,
       target: target,
     );
+  }
+
+  /// Moves the position and target by [delta], keeping the velocity.
+  void shift(double delta) => _follower.shift(delta);
+
+  /// Heads for the nearest extent when the target is outside the extents.
+  @override
+  void applyNewDimensions() {
+    final target = this.target.clamp(
+      metrics.minScrollExtent,
+      metrics.maxScrollExtent,
+    );
+    if (target != this.target) retarget(target, _motion);
   }
 
   void _tick(Duration elapsed) {
@@ -291,7 +314,14 @@ sealed class _Follower {
 
   double x;
   double v;
-  final double target;
+  double target;
+
+  /// Moves [x] and [target] by [delta] without changing the path's shape.
+  @mustCallSuper
+  void shift(double delta) {
+    x += delta;
+    target += delta;
+  }
 
   /// Moves [dt] seconds forward, updating [x] and [v]. Returns whether the
   /// follower has arrived, in which case [x] is [target] and [v] is `0`.
@@ -326,11 +356,18 @@ class _SpringFollower extends _Follower {
 
   final SpringSimulation _simulation;
   double _t = 0.0;
+  double _offset = 0.0;
+
+  @override
+  void shift(double delta) {
+    super.shift(delta);
+    _offset += delta;
+  }
 
   @override
   bool step(double dt) {
     _t += dt;
-    x = _simulation.x(_t);
+    x = _offset + _simulation.x(_t);
     v = _simulation.dx(_t);
     return _simulation.isDone(_t);
   }
@@ -347,8 +384,14 @@ class _CurveFollower extends _Follower {
   }) : _from = x;
 
   final CurveWheelMotion motion;
-  final double _from;
+  double _from;
   double _t = 0.0;
+
+  @override
+  void shift(double delta) {
+    super.shift(delta);
+    _from += delta;
+  }
 
   @override
   bool step(double dt) {
