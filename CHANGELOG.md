@@ -7,6 +7,10 @@
   it, and the remaining wheel distance carries on. When the content shrinks so
   that the target is past the end, the motion now eases into the new end
   instead of stopping there abruptly.
+* Fix: a wheel motion keeps to the scroll view's current extents after the
+  view replaces its scroll position mid-motion, for example on a physics
+  change. It read the extents of the old position, so with bouncing physics it
+  could run past a new, shorter end and bounce back.
 
 ## 0.1.3
 
