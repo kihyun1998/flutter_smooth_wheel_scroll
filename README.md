@@ -102,7 +102,12 @@ With every motion:
 - Wheel input during a motion adds to the previous target, so fast consecutive
   notches travel the full distance.
 - Scrolling never passes the start or end of the list, even with `bounce`, on
-  both clamping and bouncing scroll physics.
+  both clamping and bouncing scroll physics. When the list gets shorter during
+  a motion, the motion eases into the new end.
+- A layout that corrects the scroll offset during a motion, for example to keep
+  what is in view in place as content above it changes size, moves the motion
+  with it: nothing in view jumps, and the motion still covers the distance the
+  wheel asked for.
 - Items stay tappable while a motion settles.
 - `userScrollDirection` is reported during the motion, so widgets that hide on
   scroll keep working.
