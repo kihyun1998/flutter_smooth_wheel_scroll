@@ -1,3 +1,13 @@
+## 0.1.4
+
+* Fix: a layout correction during a wheel motion is no longer undone on the
+  next frame. When a scroll view corrects its offset with
+  `ScrollPosition.correctBy` — for example to keep what is in view in place as
+  content above it changes size — the motion's position and target move with
+  it, and the remaining wheel distance carries on. When the content shrinks so
+  that the target is past the end, the motion now eases into the new end
+  instead of stopping there abruptly.
+
 ## 0.1.3
 
 * Fix: on the web, trackpad scrolling is no longer animated by
