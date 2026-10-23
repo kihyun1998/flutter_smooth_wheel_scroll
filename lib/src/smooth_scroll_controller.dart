@@ -96,7 +96,6 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
       beginActivity(
         _WheelMotionActivity(
           this,
-          metrics: this,
           motion: motion,
           target: target,
           vsync: context.vsync,
@@ -210,23 +209,23 @@ abstract final class _ScrollEventKind {
 /// time, and never past the scroll extents.
 class _WheelMotionActivity extends ScrollActivity {
   _WheelMotionActivity(
-    super.delegate, {
-    required this.metrics,
+    ScrollPositionWithSingleContext super.delegate, {
     required WheelMotion motion,
     required double target,
     required TickerProvider vsync,
   }) : _motion = motion,
        _follower = _Follower.of(
          motion,
-         x: metrics.pixels,
+         x: delegate.pixels,
          v: 0.0,
          target: target,
        ) {
     _ticker = vsync.createTicker(_tick)..start();
   }
 
-  /// The position being driven, read for its extents.
-  final ScrollMetrics metrics;
+  /// The position being driven, read for its extents: the [delegate], which
+  /// is whichever position holds this activity now.
+  ScrollMetrics get metrics => delegate as ScrollMetrics;
 
   late final Ticker _ticker;
   WheelMotion _motion;

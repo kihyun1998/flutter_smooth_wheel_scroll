@@ -85,6 +85,13 @@ accumulated target instead of jumping, by overriding
   last step is the snap, under 0.5 px. Easing in, and the test's 2 px bound on
   that last step, are the maintainer's call in #19, where the issue asked only
   that it stop at the new end without jumping; theirs to reverse.
+- The activity reads the extents from its `delegate`, never from a position
+  it kept. When `Scrollable` replaces the position (a change of physics,
+  controller, scroll behaviour or an inherited dependency), the new position
+  takes over the running activity, and
+  `ScrollPositionWithSingleContext.absorb` points it at itself through
+  `updateDelegate`; the old one stops receiving dimensions, so a kept
+  reference clamped to those old extents (#20).
 - The activity clamps to the extents itself. `setPixels` reporting overscroll
   only stops a spring with bounce under clamping physics; bouncing physics
   (the macOS and iOS default) accepts the overscroll and reports none.
@@ -131,6 +138,12 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
   `applyContentDimensions`, `applyNewDimensions`: a correction changes only
   `pixels` and marks the dimensions changed, which makes the next
   `applyContentDimensions` call the activity's `applyNewDimensions`.
+- `packages/flutter/lib/src/widgets/scroll_position.dart` — `absorb`: moves
+  the activity to the new position, and calls `resetActivity` only when the
+  position's type changes. `scroll_position_with_single_context.dart` —
+  `absorb`: calls the activity's `updateDelegate`, or `goIdle` when the old
+  position is of another kind. `scrollable.dart` — `_updatePosition`:
+  disposes the old position in a microtask.
 - `packages/flutter/lib/src/widgets/scroll_physics.dart` —
   `RangeMaintainingScrollPhysics.adjustPositionForNewDimensions`: does not
   enforce the extents while the activity's velocity is not zero.
@@ -181,11 +194,6 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
   or, in the same synchronous flush, the previous event's. A `pointerScroll`
   called with no event before the microtasks run also reads the previous
   event's kind. No test.
-- The activity reads the extents from the position it was created for. When
-  `Scrollable` replaces the position (a physics change), `absorb` moves the
-  activity but not that reference, so it clamps to the old extents: with
-  bouncing physics, a motion runs past a new, shorter end and bounces back.
-  Measured in #19, filed as #20.
 - `correctPixels`, which sets `pixels` outright, is not passed to the motion.
   The position calls it itself (restoring an offset,
   `correctForNewDimensions`); a viewport uses `correctBy`. Left out of #19.
