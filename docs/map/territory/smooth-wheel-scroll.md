@@ -69,6 +69,22 @@ accumulated target instead of jumping, by overriding
   notches from surging; a curve restarts from rest; a lerp's speed follows the
   remaining distance, so it rises when the target moves away. Only the spring
   is continuous in velocity, by design of the other two.
+- A layout correction (`correctBy`) during a motion moves the follower's
+  position and target by the same amount and keeps its velocity, so the next
+  frame continues from the corrected position. A curve also moves its start,
+  and a spring adds the correction to its simulation's output rather than
+  being rebuilt, so neither changes its path. `correctBy` is the only way a
+  viewport changes `pixels` during layout, and it tells no activity.
+- When new dimensions leave the target outside the extents, the activity
+  heads for the nearest extent from its current position and velocity, as a
+  new wheel target would. `correctBy` always leads to `applyNewDimensions`, so
+  a correction that pushes the target out is clamped the same way.
+  `RangeMaintainingScrollPhysics` leaves an animating position alone, so
+  nothing else does it. Without this the motion reaches the end at speed
+  (3–25 px in the last 10 ms frame in the tests) and stops there; with it the
+  last step is the snap, under 0.5 px. Easing in, and the test's 2 px bound on
+  that last step, are the maintainer's call in #19, where the issue asked only
+  that it stop at the new end without jumping; theirs to reverse.
 - The activity clamps to the extents itself. `setPixels` reporting overscroll
   only stops a spring with bounce under clamping physics; bouncing physics
   (the macOS and iOS default) accepts the overscroll and reports none.
@@ -111,6 +127,13 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
 - `packages/flutter/lib/src/widgets/scroll_activity.dart` —
   `DrivenScrollActivity`: the end-of-motion and overscroll handling the motion
   activity mirrors, and the pointer-ignoring it does not.
+- `packages/flutter/lib/src/widgets/scroll_position.dart` — `correctBy`,
+  `applyContentDimensions`, `applyNewDimensions`: a correction changes only
+  `pixels` and marks the dimensions changed, which makes the next
+  `applyContentDimensions` call the activity's `applyNewDimensions`.
+- `packages/flutter/lib/src/widgets/scroll_physics.dart` —
+  `RangeMaintainingScrollPhysics.adjustPositionForNewDimensions`: does not
+  enforce the extents while the activity's velocity is not zero.
 - `packages/flutter/lib/src/physics/spring_simulation.dart` —
   `SpringDescription.withDurationAndBounce`: the duration/bounce mapping.
 
@@ -158,6 +181,16 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
   or, in the same synchronous flush, the previous event's. A `pointerScroll`
   called with no event before the microtasks run also reads the previous
   event's kind. No test.
-- The activity owns the position it last set. If something else changes
-  `pixels` mid-motion (a correction from content resizing above), the next
-  frame sets the follower's own value back. Not reproduced; no test.
+- The activity reads the extents from the position it was created for. When
+  `Scrollable` replaces the position (a physics change), `absorb` moves the
+  activity but not that reference, so it clamps to the old extents: with
+  bouncing physics, a motion runs past a new, shorter end and bounces back.
+  Measured in #19, filed as #20.
+- `correctPixels`, which sets `pixels` outright, is not passed to the motion.
+  The position calls it itself (restoring an offset,
+  `correctForNewDimensions`); a viewport uses `correctBy`. Left out of #19.
+- When the content shrinks below the current position during a motion,
+  `RangeMaintainingScrollPhysics` leaves the position past the new end for
+  that frame, and the next frame clamps it and stops the motion. Under
+  `ScrollController` the position is clamped in the same layout. Not
+  measured.

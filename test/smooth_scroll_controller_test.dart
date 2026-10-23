@@ -64,6 +64,92 @@ Future<void> _wheel(
   await tester.pump();
 }
 
+/// A sliver of [extent] that keeps what follows it in place when [extent]
+/// changes while it is scrolled past, by asking the viewport to correct the
+/// scroll offset by the change.
+class _Anchoring extends LeafRenderObjectWidget {
+  const _Anchoring({required this.extent});
+
+  final double extent;
+
+  @override
+  _RenderAnchoring createRenderObject(BuildContext context) =>
+      _RenderAnchoring(extent);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderAnchoring renderObject) {
+    renderObject.extent = extent;
+  }
+}
+
+class _RenderAnchoring extends RenderSliver {
+  _RenderAnchoring(this._extent);
+
+  double _extent;
+  double? _laidOut;
+
+  set extent(double value) {
+    if (value == _extent) return;
+    _extent = value;
+    markNeedsLayout();
+  }
+
+  @override
+  void performLayout() {
+    final laidOut = _laidOut;
+    _laidOut = _extent;
+    if (laidOut != null &&
+        laidOut != _extent &&
+        constraints.scrollOffset > 0.0) {
+      geometry = SliverGeometry(scrollOffsetCorrection: _extent - laidOut);
+      return;
+    }
+    final paintExtent = calculatePaintOffset(
+      constraints,
+      from: 0.0,
+      to: _extent,
+    );
+    geometry = SliverGeometry(
+      scrollExtent: _extent,
+      paintExtent: paintExtent,
+      maxPaintExtent: _extent,
+    );
+  }
+}
+
+/// [_Anchoring] of [header] above [itemCount] items of [_itemExtent].
+Widget _anchored(
+  ScrollController controller, {
+  required double header,
+  int itemCount = 100,
+  Key? key,
+  ScrollPhysics? physics,
+}) {
+  return Directionality(
+    key: key,
+    textDirection: TextDirection.ltr,
+    child: Center(
+      child: SizedBox(
+        height: _viewport,
+        child: CustomScrollView(
+          controller: controller,
+          physics: physics,
+          slivers: [
+            _Anchoring(extent: header),
+            SliverFixedExtentList(
+              itemExtent: _itemExtent,
+              delegate: SliverChildBuilderDelegate(
+                (_, i) => Text('$i'),
+                childCount: itemCount,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 const _innerKey = Key('inner');
 
 /// A vertical outer list with a 300 px inner list of 8 items (max extent 100)
@@ -179,6 +265,105 @@ void main() {
           expect(controller.offset, 0);
         });
       }
+
+      testWidgets('keeps the content in place through a layout correction', (
+        tester,
+      ) async {
+        const frame = Duration(milliseconds: 10);
+        Future<List<double>> run(Key key, {required bool grow}) async {
+          final controller = SmoothScrollController(motion: motion);
+          await tester.pumpWidget(_anchored(controller, header: 0, key: key));
+          await _wheel(tester, 120);
+          final tops = <double>[];
+          for (var i = 0; i < 30; i++) {
+            await tester.pumpWidget(
+              _anchored(controller, header: grow && i >= 4 ? 300 : 0, key: key),
+              duration: frame,
+            );
+            tops.add(tester.getTopLeft(find.text('4')).dy);
+          }
+          await tester.pumpAndSettle();
+          tops.add(tester.getTopLeft(find.text('4')).dy);
+          expect(controller.offset, grow ? 420 : 120);
+          return tops;
+        }
+
+        final still = await run(const ValueKey('still'), grow: false);
+        final grown = await run(const ValueKey('grown'), grow: true);
+
+        for (var i = 0; i < still.length; i++) {
+          expect(grown[i], closeTo(still[i], 0.01), reason: 'frame $i');
+        }
+      });
+
+      testWidgets('eases into the end when the content shrinks past the '
+          'target', (tester) async {
+        final controller = SmoothScrollController(motion: motion);
+        await tester.pumpWidget(_list(controller, itemCount: 30));
+
+        await _wheel(tester, 600);
+        final offsets = <double>[];
+        for (var i = 0; i < 40; i++) {
+          await tester.pumpWidget(
+            _list(controller, itemCount: i >= 3 ? 22 : 30),
+            duration: const Duration(milliseconds: 10),
+          );
+          offsets.add(controller.offset);
+        }
+        await tester.pumpAndSettle();
+
+        const end = 22 * _itemExtent - _viewport;
+        expect(controller.offset, end);
+        expect(offsets, everyElement(lessThanOrEqualTo(end)));
+        final arrival = offsets.indexOf(end);
+        expect(arrival, greaterThan(0));
+        expect(offsets[arrival] - offsets[arrival - 1], lessThan(2));
+      });
+
+      testWidgets('eases into the start when a layout correction moves the '
+          'target past it', (tester) async {
+        final controller = SmoothScrollController(motion: motion);
+        await tester.pumpWidget(_anchored(controller, header: 400));
+        controller.jumpTo(600);
+        await tester.pump();
+
+        await _wheel(tester, -300);
+        final offsets = <double>[];
+        for (var i = 0; i < 40; i++) {
+          await tester.pumpWidget(
+            _anchored(controller, header: i >= 2 ? 0 : 400),
+            duration: const Duration(milliseconds: 10),
+          );
+          offsets.add(controller.offset);
+        }
+        await tester.pumpAndSettle();
+
+        expect(controller.offset, 0);
+        expect(offsets, everyElement(greaterThanOrEqualTo(0)));
+        final arrival = offsets.indexOf(0);
+        expect(arrival, greaterThan(2));
+        expect(offsets[arrival - 1] - offsets[arrival], lessThan(2));
+      });
+
+      testWidgets('a layout correction without a motion moves the position '
+          'as with ScrollController', (tester) async {
+        Future<double> run(ScrollController controller, Key key) async {
+          await tester.pumpWidget(_anchored(controller, header: 0, key: key));
+          controller.jumpTo(100);
+          await tester.pump();
+          await tester.pumpWidget(_anchored(controller, header: 300, key: key));
+          await tester.pumpAndSettle();
+          return controller.offset;
+        }
+
+        final smooth = await run(
+          SmoothScrollController(motion: motion),
+          const ValueKey('smooth'),
+        );
+        final plain = await run(ScrollController(), const ValueKey('plain'));
+        expect(plain, 400);
+        expect(smooth, plain);
+      });
 
       testWidgets('items stay tappable during the motion', (tester) async {
         var taps = 0;
