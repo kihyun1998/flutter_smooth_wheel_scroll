@@ -320,6 +320,44 @@ void main() {
         expect(offsets[arrival] - offsets[arrival - 1], lessThan(2));
       });
 
+      for (final MapEntry(key: physicsName, value: physics)
+          in _physics.entries) {
+        testWidgets('eases into a shrunk end after its position is replaced '
+            'with $physicsName physics', (tester) async {
+          final controller = SmoothScrollController(motion: motion);
+          final replaced = physics.applyTo(
+            const AlwaysScrollableScrollPhysics(),
+          );
+          await tester.pumpWidget(
+            _list(controller, itemCount: 30, physics: physics),
+          );
+          final first = controller.position;
+
+          await _wheel(tester, 600);
+          final offsets = <double>[];
+          for (var i = 0; i < 40; i++) {
+            await tester.pumpWidget(
+              _list(
+                controller,
+                itemCount: i >= 3 ? 22 : 30,
+                physics: i >= 1 ? replaced : physics,
+              ),
+              duration: const Duration(milliseconds: 10),
+            );
+            offsets.add(controller.offset);
+          }
+          await tester.pumpAndSettle();
+
+          expect(controller.position, isNot(same(first)));
+          const end = 22 * _itemExtent - _viewport;
+          expect(controller.offset, end);
+          expect(offsets, everyElement(lessThanOrEqualTo(end)));
+          final arrival = offsets.indexOf(end);
+          expect(arrival, greaterThan(0));
+          expect(offsets[arrival] - offsets[arrival - 1], lessThan(2));
+        });
+      }
+
       testWidgets('eases into the start when a layout correction moves the '
           'target past it', (tester) async {
         final controller = SmoothScrollController(motion: motion);
