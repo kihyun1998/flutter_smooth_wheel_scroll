@@ -87,6 +87,9 @@ SmoothScrollController(
 - **`lerp.timeConstant`**: about 63% of the remaining distance is covered per
   time constant. Smaller is snappier.
 - A zero duration or time constant turns the animation off.
+- Motions compare by value, so a `WheelMotion` can sit in an immutable config
+  or theme. A `curve` compares with its own `==`: the `Curves` constants are
+  equal, two separately built `Cubic`s are not.
 
 `motion` can be changed at any time, for example from a settings screen; the
 next wheel input uses it.
