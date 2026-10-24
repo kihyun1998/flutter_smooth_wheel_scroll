@@ -1,3 +1,13 @@
+## 0.1.5
+
+* `SpringWheelMotion`, `CurveWheelMotion` and `LerpWheelMotion` compare by
+  value: two motions of the same kind with equal fields are `==` and share a
+  `hashCode`, even when built from runtime values rather than as constants. A
+  widget or config that holds a `WheelMotion` no longer reads an equal motion
+  as a change. `CurveWheelMotion.curve` is compared with the curve's own `==`,
+  so the `Curves` constants compare equal while two separately built `Cubic`s
+  do not.
+
 ## 0.1.4
 
 * Fix: a layout correction during a wheel motion is no longer undone on the
