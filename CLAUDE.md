@@ -2,16 +2,16 @@
 
 ### Issue tracker
 
-Issues are tracked in this repo's GitHub Issues via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+GitHub Issues via `gh`. Before creating, reading, labelling or closing an issue, read `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+Before applying a triage label, read `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context. Before exploring an area of the code, read `docs/agents/domain.md`.
 
 ## Comments
 
-Comments and doc comments are written in English. A comment says what the code is. Why it is this way, what it deliberately leaves out, the trap and the measured value go to the territory note under `docs/map/`; history goes to the commit message. The map starts at `docs/map/README.md`.
+Comments and doc comments are written in English. A comment says what the code is. Why it is this way, what it deliberately leaves out, the trap and the measured value go to the territory note under `docs/map/`; history goes to the commit message. Before writing a territory note, read `docs/map/README.md`.
