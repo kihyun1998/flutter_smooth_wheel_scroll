@@ -39,6 +39,15 @@ final class SpringWheelMotion extends WheelMotion {
   /// [Duration.zero] jumps as [ScrollController] does.
   final Duration duration;
   final double bounce;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SpringWheelMotion &&
+      other.duration == duration &&
+      other.bounce == bounce;
+
+  @override
+  int get hashCode => Object.hash(SpringWheelMotion, duration, bounce);
 }
 
 /// See [WheelMotion.curve].
@@ -50,7 +59,18 @@ final class CurveWheelMotion extends WheelMotion {
 
   /// [Duration.zero] jumps as [ScrollController] does.
   final Duration duration;
+
+  /// Compared with its own `==`.
   final Curve curve;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CurveWheelMotion &&
+      other.duration == duration &&
+      other.curve == curve;
+
+  @override
+  int get hashCode => Object.hash(CurveWheelMotion, duration, curve);
 }
 
 /// See [WheelMotion.lerp].
@@ -59,4 +79,11 @@ final class LerpWheelMotion extends WheelMotion {
 
   /// [Duration.zero] jumps as [ScrollController] does.
   final Duration timeConstant;
+
+  @override
+  bool operator ==(Object other) =>
+      other is LerpWheelMotion && other.timeConstant == timeConstant;
+
+  @override
+  int get hashCode => Object.hash(LerpWheelMotion, timeConstant);
 }
