@@ -104,6 +104,11 @@ accumulated target instead of jumping, by overriding
 - Spring parameters are exposed as duration and bounce, not stiffness and
   damping: chosen by hand in the #3 prototype (tag `archive/3-wheel-motion`),
   where the physical pair gave no basis for picking a default.
+- A `WheelMotion` compares by its kind and fields, so a consumer's immutable
+  config holding one compares by value even when the app builds the motion
+  with runtime values (`just_sonner`'s `SonnerConfig.wheelMotion`, #26). The
+  hash includes the subclass, so motions of different kinds with equal
+  durations hash apart.
 
 ## Code
 
@@ -202,3 +207,8 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
   that frame, and the next frame clamps it and stops the motion. Under
   `ScrollController` the position is clamped in the same layout. Not
   measured.
+- `CurveWheelMotion.curve` compares with the curve's own `==`, and the
+  framework's curves (`Cubic`, `Interval`, …) do not override it. Two curve
+  motions with equal but separately built curves, such as
+  `Cubic(0.2, 0, 0, 1)` twice outside a const context, are unequal. The
+  `Curves.*` constants are canonical, so they compare equal.
