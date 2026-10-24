@@ -38,11 +38,12 @@ the same across the supported range.
 
 - The analyzer takes the language version from the `sdk:` lower bound, so
   `flutter analyze` rejects syntax newer than Dart 3.8 on any current SDK.
-- Framework APIs newer than 3.32 are **not** caught by any gate: CI and local
-  runs use the SDK in `.metadata`. A new framework call means re-running the
+- Framework APIs newer than 3.32 are **not** caught by any gate: local runs use
+  the SDK in `.metadata`, and there is no CI. A new framework call means re-running the
   search above, or raising the floor.
 
 ## Territories
 
+- [Publishing](../territory/publishing.md)
 - [Smooth wheel scroll](../territory/smooth-wheel-scroll.md)
 - [Wheel scale](../territory/wheel-scale.md)
