@@ -14,4 +14,4 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 
 ## Comments
 
-A comment says what the code is. Why it is this way, what it deliberately leaves out, the trap and the measured value go to the territory note under `docs/map/`; history goes to the commit message. The map starts at `docs/map/README.md`.
+Comments and doc comments are written in English. A comment says what the code is. Why it is this way, what it deliberately leaves out, the trap and the measured value go to the territory note under `docs/map/`; history goes to the commit message. The map starts at `docs/map/README.md`.
