@@ -26,7 +26,9 @@ merged through a `chore/release-*` pull request; no CI workflow publishes.
   lockfile, so a PR opens only when a release falls outside the caret; at
   `0.x` every minor release does, and each such PR is a floor decision for
   consumers rather than a chore, so root PRs stay one per dependency. The
-  only non-SDK dependency is dev `flutter_lints`.
+  only non-SDK dependency is dev `flutter_lints`. A run with every dependency
+  inside its caret succeeds and opens nothing, so no PR is the healthy state;
+  the run's status is under the repository's Dependabot jobs.
 - **Root only, weekly**: the maintainer's call on #25, against the ticket's
   monthly interval and the siblings that also watch `/example`. Nothing ships
   from `example/`. No `github-actions` entry, because the repository has no
@@ -60,6 +62,4 @@ merged through a `chore/release-*` pull request; no CI workflow publishes.
 - No CI: nothing runs `flutter analyze`, the tests or the publish dry run on a
   pull request, so a Dependabot PR arrives with no gate.
 - A release inside the caret reaches no PR: with no root lockfile, Dependabot
-  has nothing to update until the caret is outgrown.
-- Dependabot's first run on this configuration has not been observed.
-- How a release is cut is not written down beyond the commit and branch names.
+  has nothing to update until the caret is outgrown.- How a release is cut is not written down beyond the commit and branch names.
