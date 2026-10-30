@@ -10,3 +10,7 @@ A Flutter package that animates mouse-wheel scrolling smoothly on desktop and we
 |---|---|---|---|
 | Flutter framework (flutter/flutter) — `Scrollable`, `ScrollPosition`, `PointerScrollEvent` | how it works | its source tree — raw | binding |
 | Flutter API docs (api.flutter.dev) | how it works | the published docs — **summarized** | binding |
+
+## Release
+
+pub-ready
