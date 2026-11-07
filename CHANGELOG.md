@@ -1,3 +1,14 @@
+## Unreleased
+
+* `ScrollbarController`: a `ScrollController` for a scrollbar that sits on its
+  own `Scrollable` beside a scroll view, as a table or a tree keeps one. A wheel
+  over the scrollbar goes to the scroll view's controller, so it joins that
+  view's wheel motion when the controller is a `SmoothScrollController`. The
+  scrollbar's end follows the view's, a press or a track click stops the
+  view's running motion, and the view's physics decide whether the wheel is
+  taken; a wheel they refuse leaves the platform's default action allowed.
+  Mirroring the two controllers' offsets stays with the caller. See the README.
+
 ## 0.1.5
 
 * `SpringWheelMotion`, `CurveWheelMotion` and `LerpWheelMotion` compare by

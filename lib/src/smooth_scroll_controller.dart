@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
@@ -7,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'pointer_scroll_record.dart';
 import 'wheel_motion.dart';
 
 /// A [ScrollController] whose positions animate mouse wheel scrolling instead
@@ -65,7 +65,7 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
     super.oldPosition,
     super.debugLabel,
   }) {
-    _ScrollEventKind.attach();
+    PointerScrollRecord.attach();
   }
 
   final SmoothScrollController controller;
@@ -73,7 +73,7 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
   @override
   void pointerScroll(double delta) {
     final motion = controller.motion;
-    final kind = _ScrollEventKind.current;
+    final kind = PointerScrollRecord.event?.kind;
     if (delta == 0.0 ||
         _isInstant(motion) ||
         (kind != null && kind != PointerDeviceKind.mouse)) {
@@ -168,40 +168,8 @@ class _SmoothScrollPosition extends ScrollPositionWithSingleContext {
 
   @override
   void dispose() {
-    _ScrollEventKind.detach();
+    PointerScrollRecord.detach();
     super.dispose();
-  }
-}
-
-/// The device kind of the last [PointerScrollEvent] the [GestureBinding]
-/// routed, recorded by one global [PointerRouter] route shared by every
-/// [_SmoothScrollPosition].
-abstract final class _ScrollEventKind {
-  static int _positions = 0;
-
-  /// The kind of the last routed [PointerScrollEvent], or `null` once the
-  /// microtasks after its dispatch have run.
-  static PointerDeviceKind? current;
-
-  /// Registers the route for the first position.
-  static void attach() {
-    if (_positions++ == 0) {
-      GestureBinding.instance.pointerRouter.addGlobalRoute(_record);
-    }
-  }
-
-  /// Removes the route with the last position.
-  static void detach() {
-    if (--_positions == 0) {
-      GestureBinding.instance.pointerRouter.removeGlobalRoute(_record);
-      current = null;
-    }
-  }
-
-  static void _record(PointerEvent event) {
-    if (event is! PointerScrollEvent) return;
-    current = event.kind;
-    scheduleMicrotask(() => current = null);
   }
 }
 

@@ -80,6 +80,7 @@ const _curves = <String, Curve>{
 class _ComparisonPageState extends State<ComparisonPage> {
   final _defaultController = ScrollController();
   final _smoothController = SmoothScrollController();
+  final _ownBarController = SmoothScrollController();
 
   _Kind _kind = _Kind.spring;
   double _springMs = 400;
@@ -90,7 +91,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
 
   void _update(VoidCallback change) {
     setState(change);
-    _smoothController.motion = switch (_kind) {
+    final motion = switch (_kind) {
       _Kind.spring => WheelMotion.spring(
         duration: Duration(milliseconds: _springMs.round()),
         bounce: _bounce,
@@ -103,6 +104,8 @@ class _ComparisonPageState extends State<ComparisonPage> {
         timeConstant: Duration(milliseconds: _lerpMs.round()),
       ),
     };
+    _smoothController.motion = motion;
+    _ownBarController.motion = motion;
   }
 
   String _code(double scale) {
@@ -134,6 +137,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
   void dispose() {
     _defaultController.dispose();
     _smoothController.dispose();
+    _ownBarController.dispose();
     super.dispose();
   }
 
@@ -203,6 +207,8 @@ class _ComparisonPageState extends State<ComparisonPage> {
               controller: _smoothController,
             ),
           ),
+          const VerticalDivider(width: 1),
+          Expanded(child: _OwnBarList(body: _ownBarController)),
         ],
       ),
     );
@@ -391,6 +397,104 @@ class _ItemList extends StatelessWidget {
               itemCount: 500,
               itemBuilder: (_, i) => ListTile(title: Text('Item $i')),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A list whose scrollbar sits on its own controller, as a table or a tree
+/// keeps one. [ScrollbarController] hands the wheel over the scrollbar to
+/// [body]; the two controllers are kept equal by a listener on each.
+class _OwnBarList extends StatefulWidget {
+  const _OwnBarList({required this.body});
+
+  final SmoothScrollController body;
+
+  @override
+  State<_OwnBarList> createState() => _OwnBarListState();
+}
+
+class _OwnBarListState extends State<_OwnBarList> {
+  static const _itemCount = 500;
+  static const _itemExtent = 56.0;
+
+  late final _bar = ScrollbarController(body: widget.body);
+  bool _syncing = false;
+
+  void _follow(ScrollController from, ScrollController to) {
+    if (_syncing || !from.hasClients || !to.hasClients) return;
+    final target = from.offset.clamp(
+      to.position.minScrollExtent,
+      to.position.maxScrollExtent,
+    );
+    if (target == to.offset) return;
+    _syncing = true;
+    try {
+      to.position.jumpTo(target);
+    } finally {
+      _syncing = false;
+    }
+  }
+
+  void _bodyChanged() => _follow(widget.body, _bar);
+
+  void _barChanged() => _follow(_bar, widget.body);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.body.addListener(_bodyChanged);
+    _bar.addListener(_barChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.body.removeListener(_bodyChanged);
+    _bar.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            'ScrollbarController',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        Expanded(
+          child: Stack(
+            children: [
+              ListView.builder(
+                controller: widget.body,
+                itemExtent: _itemExtent,
+                itemCount: _itemCount,
+                itemBuilder: (_, i) => ListTile(title: Text('Item $i')),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: 12,
+                child: Scrollbar(
+                  controller: _bar,
+                  thumbVisibility: true,
+                  trackVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _bar,
+                    child: const SizedBox(
+                      width: 12,
+                      height: _itemCount * _itemExtent,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],

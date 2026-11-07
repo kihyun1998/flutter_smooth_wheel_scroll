@@ -115,8 +115,9 @@ With every motion:
 - `userScrollDirection` is reported during the motion, so widgets that hide on
   scroll keep working.
 - Dragging, the scrollbar, the keyboard and your own `jumpTo`/`animateTo` calls
-  behave as with `ScrollController`. Wheel input during your own `animateTo`
-  starts from the current position.
+  behave as with `ScrollController`. A scrollbar on its own controller needs
+  `ScrollbarController` for the wheel over the scrollbar itself; see below.
+  Wheel input during your own `animateTo` starts from the current position.
 - In nested scroll views, the outer view takes the wheel once the inner one
   reaches its end, as in Flutter by default. While the inner motion is still
   heading for its end, further wheel input already goes to the outer view.
@@ -125,6 +126,44 @@ With every motion:
   touchpads send `PointerPanZoom` events, which scroll as a drag; on the web,
   trackpads send `PointerScrollEvent`s of kind `PointerDeviceKind.trackpad`,
   which the controller does not animate.
+
+## A scrollbar on its own controller
+
+A table or a tree often keeps its scrollbar in a separate `Scrollable` laid
+over the view, on its own controller, so the view can build its rows lazily. A
+wheel over that scrollbar reaches the scrollbar's controller, not the view's,
+so it jumps. `ScrollbarController` gives it to the view's controller instead.
+
+```dart
+final body = SmoothScrollController();
+final bar = ScrollbarController(body: body);
+```
+
+Use `body` on the view and `bar` on both the `Scrollbar` and the `Scrollable`
+it wraps.
+
+- The wheel over the scrollbar joins the view's motion: notches over the
+  scrollbar and over the view add to one target, and the two stay level
+  frame by frame.
+- Keeping the two offsets equal is yours: listen to each controller and
+  `jumpTo` the other, with a guard against the echo. `ScrollbarController`
+  adds no listeners.
+- The scrollbar's end is the view's end, so a notch with the view at its end
+  reaches an enclosing scroll view as it would without the scrollbar.
+- Pressing the thumb, clicking the track or calling `animateTo` on the
+  scrollbar stops the view's running motion first, and a wheel ends whatever
+  the scrollbar is running, such as a track-click animation or a fling.
+- The wheel is taken only when the view's physics accept user offset. Physics
+  that refuse it, for example to keep a Ctrl+wheel zoom out of scrolling, stop
+  the wheel over the scrollbar too, and the platform's default action stays
+  allowed. An enclosing scroll view does not get that wheel, as it would over
+  the view. The scrollbar's own physics are not asked.
+- `body` may be any `ScrollController`; with a plain one the wheel jumps, as
+  before. While `body` has no client or no content dimensions, the scrollbar's
+  own position takes the wheel.
+- `RawScrollbar` reads the wheel along its own axis and ignores the axis
+  modifier, so Shift+wheel over a horizontal scrollbar can leave the view where
+  it is (flutter/flutter#193282). Handle it with your own `Listener`.
 
 ## Wheel distance
 
@@ -165,8 +204,8 @@ before.
 
 - `NestedScrollView` routes wheel input through its own coordinator and is not
   smoothed.
-- A scrollbar with its own controller is not smoothed when the wheel is used
-  over the scrollbar itself.
+- A scrollbar whose controller is not a `ScrollbarController` is not smoothed
+  when the wheel is used over the scrollbar itself.
 - A widget between two nested scroll views that claims wheel events through
   `GestureBinding.instance.pointerSignalResolver` does not receive the input
   the inner view passes outward during a motion; the outer view takes it.

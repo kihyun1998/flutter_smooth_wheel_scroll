@@ -48,7 +48,7 @@ accumulated target instead of jumping, by overriding
   kind goes to the default `pointerScroll`, whose `goIdle` stops a running
   motion. The web sends trackpad scrolling as a `PointerScrollEvent` of kind
   `trackpad`, not as `PointerPanZoom*`. `pointerScroll` receives only the
-  delta, so `_ScrollEventKind` records the kind from a global `pointerRouter`
+  delta, so `PointerScrollRecord` records the event from a global `pointerRouter`
   route: `GestureBinding.handleEvent` routes the event before the resolver
   calls `pointerScroll`, because the binding's own hit-test entry comes last.
   The record is cleared in a microtask, after the event's dispatch, so a
@@ -56,8 +56,8 @@ accumulated target instead of jumping, by overriding
   tests) animates once those microtasks have run, even after an event no
   `Scrollable` claimed. Chosen by the maintainer in #11 over keeping web
   trackpad smooth and documenting it.
-- One route and one record serve every smooth position, registered with the
-  first and removed with the last. A route per position cost every pointer
+- One route and one record serve every smooth and scrollbar position, registered
+  with the first and removed with the last. A route per position cost every pointer
   event one call and every scroll event one microtask per position: with 200
   positions, a scroll event and its frame took about 1.1–1.5 ms longer than
   with `ScrollController` under `flutter test`; shared, the difference is
@@ -112,7 +112,8 @@ accumulated target instead of jumping, by overriding
 
 ## Code
 
-- `lib/src/smooth_scroll_controller.dart` — `SmoothScrollController`, `_SmoothScrollPosition.pointerScroll`, `_SmoothScrollPosition._passToAncestor`, `_ScrollEventKind`, `_WheelMotionActivity`, `_Follower`, `_SpringFollower`, `_CurveFollower`, `_LerpFollower`
+- `lib/src/smooth_scroll_controller.dart` — `SmoothScrollController`, `_SmoothScrollPosition.pointerScroll`, `_SmoothScrollPosition._passToAncestor`, `_WheelMotionActivity`, `_Follower`, `_SpringFollower`, `_CurveFollower`, `_LerpFollower`
+- `lib/src/pointer_scroll_record.dart` — `PointerScrollRecord`
 - `lib/src/wheel_motion.dart` — `WheelMotion`, `SpringWheelMotion`, `CurveWheelMotion`, `LerpWheelMotion`
 
 ## Reference behaviour
@@ -163,14 +164,16 @@ Checked against Flutter `00b0c91f06` (the revision in `.metadata`):
 ## Blast radius
 
 - [Wheel scale](wheel-scale.md) — supplies the delta this animates.
+- [Scrollbar hand-off](scrollbar-hand-off.md) — gives a wheel over a scrollbar
+  on its own controller to a position of this kind, which animates it.
 
 ## Known holes / open
 
 - `NestedScrollView` routes wheel input through
   `_NestedScrollCoordinator.pointerScroll` and is not smoothed.
-- A scrollbar with its own controller receives wheel input over its own area,
-  which is not smoothed. `flutter_table_plus` and `flutter_folderview` both
-  have one; their follow-up issues are not filed yet.
+- A scrollbar on a controller that is not a `ScrollbarController` receives
+  wheel input over its own area, which is not smoothed; the hand-off for the
+  rest is [Scrollbar hand-off](scrollbar-hand-off.md).
 - A custom `Listener` between the two views that registers with
   `pointerSignalResolver` would win the event under Flutter, but a passed
   delta skips it. Measured in #7: with a plain inner list the listener takes
