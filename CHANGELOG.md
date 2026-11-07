@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.6
 
 * `ScrollbarController`: a `ScrollController` for a scrollbar that sits on its
   own `Scrollable` beside a scroll view, as a table or a tree keeps one. A wheel

@@ -418,7 +418,7 @@ class _OwnBarList extends StatefulWidget {
 
 class _OwnBarListState extends State<_OwnBarList> {
   static const _itemCount = 500;
-  static const _itemExtent = 56.0;
+  static const _itemExtent = 48.0;
 
   late final _bar = ScrollbarController(body: widget.body);
   bool _syncing = false;
