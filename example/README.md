@@ -1,7 +1,8 @@
 # flutter_smooth_wheel_scroll example
 
-A default list next to a smooth one. Every option is adjustable with an
-explanation, and the code for the current settings is shown ready to copy.
+A default list next to a smooth one, and a third whose scrollbar sits on its own
+`ScrollbarController`. Every option is adjustable with an explanation, and the
+code for the current settings is shown ready to copy.
 
 ```sh
 flutter run -d windows   # or: -d chrome
