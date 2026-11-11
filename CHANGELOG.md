@@ -1,3 +1,13 @@
+## Unreleased
+
+* Fix: `ScrollbarController` no longer throws "ScrollController attached to
+  multiple scroll views" (in a release build, "Bad state: Too many elements")
+  in the frame where the view's scroll view is replaced by a new one while the
+  scrollbar lays out. Until the old view is removed at the end of that frame,
+  the view's controller has two positions; while it has more than one, the
+  scrollbar behaves as it does with none: its own end, its own wheel, and a
+  press or track click that stops no view motion.
+
 ## 0.1.6
 
 * `ScrollbarController`: a `ScrollController` for a scrollbar that sits on its

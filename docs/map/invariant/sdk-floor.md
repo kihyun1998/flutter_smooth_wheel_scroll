@@ -16,7 +16,7 @@ API the code calls; Dart 3.8 is the SDK that Flutter 3.32 ships.
 | `PointerRouter.addGlobalRoute` | `lib/src/pointer_scroll_record.dart` — `PointerScrollRecord` | before 1.0 |
 | `ScrollController(onAttach:, onDetach:)` | `lib/src/smooth_scroll_controller.dart` — `SmoothScrollController` | 3.13.0 |
 | `ScrollPosition.hasContentDimensions` | `lib/src/scrollbar_controller.dart` — `_ScrollbarPosition` | 1.22.0 |
-| `ScrollController.attach`, `ScrollPositionWithSingleContext.hold`, `DrivenScrollActivity` | `lib/src/scrollbar_controller.dart` — `ScrollbarController`, `_ScrollbarPosition` | 1.17.0 or earlier |
+| `ScrollController.attach`, `ScrollController.positions`, `ScrollPositionWithSingleContext.hold`, `DrivenScrollActivity` | `lib/src/scrollbar_controller.dart` — `ScrollbarController`, `_ScrollbarPosition` | 1.17.0 or earlier |
 | sealed classes, switch expressions, patterns | `lib/src/wheel_motion.dart`, `_Follower` | Dart 3.0 (Flutter 3.10) |
 
 Found with `git log -S<symbol>` in the Flutter SDK checkout, then
