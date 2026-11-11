@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 * Fix: `ScrollbarController` no longer throws "ScrollController attached to
   multiple scroll views" (in a release build, "Bad state: Too many elements")
