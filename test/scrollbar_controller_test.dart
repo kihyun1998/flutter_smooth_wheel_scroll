@@ -789,6 +789,120 @@ void main() {
     expect(barB.offset, 60);
   });
 
+  group('a body controller with two positions', () {
+    /// A list on [body] beside a list on [bar], side by side.
+    Widget pair(
+      ScrollController body,
+      ScrollController bar, {
+      required Key bodyKey,
+      required int barCount,
+    }) {
+      return Directionality(
+        textDirection: TextDirection.ltr,
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: _width,
+            height: _height,
+            child: Row(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    key: bodyKey,
+                    controller: body,
+                    itemExtent: _itemExtent,
+                    itemCount: _itemCount,
+                    itemBuilder: (_, i) => Text('$i'),
+                  ),
+                ),
+                SizedBox(
+                  width: _barWidth,
+                  child: ListView.builder(
+                    controller: bar,
+                    itemExtent: _itemExtent,
+                    itemCount: barCount,
+                    itemBuilder: (_, i) => const SizedBox(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('a frame that replaces the body\'s scroll view and lays out '
+        'the scrollbar raises nothing, and a wheel then reaches the new body', (
+      tester,
+    ) async {
+      final body = SmoothScrollController();
+      final bar = ScrollbarController(body: body);
+      addTearDown(body.dispose);
+      addTearDown(bar.dispose);
+      await tester.pumpWidget(
+        pair(body, bar, bodyKey: const ValueKey('a'), barCount: _itemCount),
+      );
+      final old = body.position;
+
+      await tester.pumpWidget(
+        pair(body, bar, bodyKey: const ValueKey('b'), barCount: _itemCount + 1),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(body.positions, hasLength(1));
+      expect(body.position, isNot(same(old)));
+
+      await _wheel(tester, const Offset(_width - _barWidth / 2, 10), 60);
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(tester.takeException(), isNull);
+      expect(body.offset, 60);
+    });
+
+    testWidgets('hold, animateTo and a wheel on the scrollbar raise nothing, '
+        'leave the body\'s motion running and fall to the scrollbar\'s own '
+        'position', (tester) async {
+      final body = SmoothScrollController();
+      final bar = ScrollbarController(body: body);
+      addTearDown(body.dispose);
+      addTearDown(bar.dispose);
+      await tester.pumpWidget(
+        pair(body, bar, bodyKey: const ValueKey('a'), barCount: _itemCount),
+      );
+      final first = body.position;
+      final second = ScrollPositionWithSingleContext(
+        physics: first.physics,
+        context: first.context,
+      );
+      body.attach(second);
+      addTearDown(second.dispose);
+      addTearDown(() => body.detach(second));
+      expect(body.positions, hasLength(2));
+      first.pointerScroll(60);
+      await tester.pump(_frame);
+      await tester.pump(_frame);
+      expect(first.pixels, inExclusiveRange(0, 60), reason: 'it animates');
+
+      final position = bar.position;
+      position.hold(() {}).cancel();
+      expect(tester.takeException(), isNull);
+      position.animateTo(
+        120,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.linear,
+      );
+      expect(tester.takeException(), isNull);
+      position.pointerScroll(60);
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(tester.takeException(), isNull);
+      expect(bar.offset, 60);
+      expect(first.pixels, 60);
+      expect(second.pixels, 0);
+    });
+  });
+
   testWidgets('a notch during a fling on the scrollbar moves on from where the '
       'fling had got to, and the fling does not carry on', (tester) async {
     final body = SmoothScrollController(

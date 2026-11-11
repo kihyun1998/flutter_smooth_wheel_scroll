@@ -159,8 +159,8 @@ it wraps.
   allowed. An enclosing scroll view does not get that wheel, as it would over
   the view. The scrollbar's own physics are not asked.
 - `body` may be any `ScrollController`; with a plain one the wheel jumps, as
-  before. While `body` has no client or no content dimensions, the scrollbar's
-  own position takes the wheel.
+  before. While `body` has no client, more than one, or no content
+  dimensions, the scrollbar's own position takes the wheel.
 - `RawScrollbar` reads the wheel along its own axis and ignores the axis
   modifier, so Shift+wheel over a horizontal scrollbar can leave the view where
   it is (flutter/flutter#193282). Handle it with your own `Listener`.

@@ -55,13 +55,17 @@ class _ScrollbarPosition extends ScrollPositionWithSingleContext {
 
   ScrollbarController controller;
 
-  /// The body's position, or `null` while it has no client or no content
-  /// dimensions.
+  /// The body's one position, or `null` while it has none or more than one.
+  ScrollPosition? get _bodyPosition {
+    final positions = controller.body.positions;
+    return positions.length == 1 ? positions.single : null;
+  }
+
+  /// The body's one position, or `null` while it has none, more than one, or
+  /// no content dimensions.
   ScrollPosition? get _body {
-    final body = controller.body;
-    if (!body.hasClients) return null;
-    final position = body.position;
-    return position.hasContentDimensions ? position : null;
+    final position = _bodyPosition;
+    return position != null && position.hasContentDimensions ? position : null;
   }
 
   @override
@@ -105,7 +109,7 @@ class _ScrollbarPosition extends ScrollPositionWithSingleContext {
   }
 
   void _stopBody() {
-    final body = controller.body;
-    if (body.hasClients) body.position.jumpTo(body.position.pixels);
+    final body = _bodyPosition;
+    body?.jumpTo(body.pixels);
   }
 }

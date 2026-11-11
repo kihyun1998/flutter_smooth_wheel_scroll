@@ -16,6 +16,10 @@ body type and the replaced body were fixed there. Theirs to reverse. The
 measurements are the issue's tables, from `flutter_table_plus` and
 `flutter_folderview`.
 
+Issue #35 and its agent brief extended the fallback to a view controller with
+more than one position, and left choosing among several positions out. Theirs
+to reverse.
+
 ## Design model
 
 - The scrollbar has no wheel motion of its own. Two motions cancel: each
@@ -50,9 +54,14 @@ measurements are the issue's tables, from `flutter_table_plus` and
   `PointerScrollRecord` holds, which is what the resolver sends when nothing
   claims. Once true it stays true, so the `respond(false)` that `Scrollable` sends
   afterwards does not undo it.
-- With no client on the view's controller, or a position with no content
-  dimensions, the wheel falls to the scrollbar position's default behaviour: no
-  exception, no dropped input.
+- With no client on the view's controller, more than one, or a position with
+  no content dimensions, the wheel falls to the scrollbar position's default
+  behaviour: no exception, no dropped input. The end is then the scrollbar's
+  own, and a press or a track click stops no view motion. More than one happens
+  for the rest of a frame that replaces the view's scroll view with a new
+  element: the old position stays attached until `BuildOwner.finalizeTree`,
+  which runs after layout, and `ScrollController.position` asserts exactly one.
+  Which of several positions is the view is not chosen.
 - The view's controller is read through the position's current controller.
   `Scrollable._shouldUpdatePosition` compares only the controller's
   `runtimeType`, so a position survives a swap of one `ScrollbarController` for
@@ -81,6 +90,12 @@ alone, not with the issue's numbers:
   the track click as `moveTo`.
 - `packages/flutter/lib/src/widgets/scrollable.dart` — `_shouldUpdatePosition`:
   compares `controller.runtimeType` only.
+- `packages/flutter/lib/src/widgets/binding.dart` — `WidgetsBinding.drawFrame`:
+  `buildScope`, then layout and paint (`super.drawFrame`), then
+  `buildOwner.finalizeTree`, which unmounts the replaced element and detaches
+  its scroll position.
+- `packages/flutter/lib/src/widgets/scroll_controller.dart` — `position`:
+  asserts `_positions.length == 1`.
 - `packages/flutter/lib/src/widgets/scroll_position.dart` —
   `applyContentDimensions`: keeps a stale extent within tolerance.
 - `packages/flutter/lib/src/gestures/events.dart` — `respond`: once
